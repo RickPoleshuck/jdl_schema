@@ -49,7 +49,7 @@ public class Main {
             String password = commandLine.getOptionValue("p");
             String output = commandLine.hasOption("o")
                     ? commandLine.getOptionValue("o")
-                    : outputFromSchema(databaseUrl);
+                    : getOutputNameFromUrl(databaseUrl);
             JdlSchema jdlSchema = new JdlSchema(
                     databaseUrl,
                     username,
@@ -64,7 +64,7 @@ public class Main {
         }
     }
 
-    private static String outputFromSchema(final String databaseUrl) throws ParseException {
+    private static String getOutputNameFromUrl(final String databaseUrl) throws ParseException {
         Pattern pattern = Pattern.compile("^jdbc:[^:]+://[^/]+/([^?]+)");
         Matcher matcher = pattern.matcher(databaseUrl);
         if (matcher.find()) {

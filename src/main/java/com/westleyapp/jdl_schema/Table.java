@@ -4,10 +4,7 @@ import org.apache.commons.text.CaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +24,17 @@ class Column {
             "DATE", ColumnType.Instant,
             "MEDIUMINT", ColumnType.Integer
     );
-    private String name;
-    private ColumnType type;
+    private final String name;
+    private final ColumnType type;
     private Integer maxlength;
+
+    public Column(final String name, final String type, final int maxlength) {
+        this.name = CaseUtils.toCamelCase(name, false, '_');
+        this.type = TYPE_MAP.get(type);
+        if (this.type == ColumnType.String) {
+            this.maxlength = maxlength;
+        }
+    }
 
     public String getName() {
         return name;
@@ -43,14 +48,6 @@ class Column {
         return maxlength;
     }
 
-    public Column(final String name, final String type, final int maxlength) {
-        this.name = CaseUtils.toCamelCase(name, false, '_');
-        this.type = TYPE_MAP.get(type);
-        if (this.type == ColumnType.String) {
-            this.maxlength = maxlength;
-        }
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Column{");
@@ -62,10 +59,54 @@ class Column {
     }
 }
 
+class ForeignKey {
+    private final String tableName;
+    private final String columnName;
+
+    public ForeignKey(String tableName, String columnName) {
+        this.tableName = tableName;
+        this.columnName = columnName;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    @Override
+    public String toString() {
+        String sb = "ForeignKey{" + "tableName='" + tableName + '\'' +
+                ", columnName='" + columnName + '\'' +
+                '}';
+        return sb;
+    }
+}
+
 public class Table {
     private static final Logger LOG = LoggerFactory.getLogger(Table.class);
     private final String name;
-    private List<Column> columns = new ArrayList<>();
+    private final List<Column> columns = new ArrayList<>();
+    private final List<String> primaryKeys;
+    private final List<ForeignKey> exportedKeys;
+
+    public Table(final Connection connection, final String tableName) throws SQLException {
+        this.name = CaseUtils.toCamelCase(tableName, true, '_');
+
+        primaryKeys = getPrimaryKeys(connection, tableName);
+        exportedKeys = getForeignKeys(connection, tableName);
+        ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + tableName + " where 1 = 2");
+        ResultSetMetaData rsmd = rs.getMetaData();
+        for (int i = 1; i <= rsmd.getColumnCount(); ++i) {
+            String columnName = rsmd.getColumnName(i);
+            if (columnName.equals("id") && primaryKeys.contains("id")) continue;
+            String columnType = rsmd.getColumnTypeName(i);
+            int columnWidth = rsmd.getPrecision(i);
+            columns.add(new Column(columnName, columnType, columnWidth));
+        }
+    }
 
     public String getName() {
         return name;
@@ -75,25 +116,35 @@ public class Table {
         return columns;
     }
 
-    public Table(final Connection connection, final String name) throws SQLException {
-        this.name = CaseUtils.toCamelCase(name, true, '_');
-        ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + name + " where 1 = 2");
-        ResultSetMetaData rsmd = rs.getMetaData();
-        for (int i = 1; i <= rsmd.getColumnCount(); ++i) {
-            String columnName = rsmd.getColumnName(i);
-            if (columnName.equals("id")) continue;
-            String columnType = rsmd.getColumnTypeName(i);
-            int columnWidth = rsmd.getPrecision(i);
-            columns.add(new Column(columnName, columnType, columnWidth));
-        }
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Table{");
         sb.append("name='").append(name).append('\'');
         sb.append(", columns=").append(columns);
+        sb.append(", primaryKeys=").append(primaryKeys);
+        sb.append(", exportedKeys=").append(exportedKeys);
         sb.append('}');
         return sb.toString();
+    }
+
+    private List<String> getPrimaryKeys(final Connection connection, final String tableName) throws SQLException {
+        List<String> primaryKeys = new ArrayList<>();
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet rs = metaData.getPrimaryKeys(null, null, tableName);
+        while (rs.next()) {
+            primaryKeys.add(rs.getString(4));
+        }
+        return primaryKeys;
+    }
+
+    private List<ForeignKey> getForeignKeys(final Connection connection, final String tableName) throws SQLException {
+        List<ForeignKey> foreignKeys = new ArrayList<>();
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet rs = metaData.getExportedKeys(null, null, tableName);
+        while (rs.next()) {
+            ForeignKey foreignKey = new ForeignKey(rs.getString(7), rs.getString(8));
+            foreignKeys.add(foreignKey);
+        }
+        return foreignKeys;
     }
 }
