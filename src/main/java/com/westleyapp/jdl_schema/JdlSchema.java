@@ -56,7 +56,7 @@ public class JdlSchema {
             writer.write("entity " + t.getName() + " {\n");
             Collections.sort(t.getColumns(), (c1, c2) -> c1.getName().compareTo(c2.getName()));
             for(Column c : t.getColumns()) {
-                writer.write("\t" + c.getName() + " " + c.getType());
+                writer.write("\t" + c.getName() + " " + Column.TYPE_MAP.get(c.getType()));
                 if (c.getMaxlength() != null) {
                     writer.write(" maxlength(" + c.getMaxlength() + ")");
                 }

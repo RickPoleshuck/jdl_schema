@@ -9,81 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-enum ColumnType {Instant, String, Integer, Boolean, Double}
 
-class Column {
-    private final static Map<String, ColumnType> TYPE_MAP = Map.of(
-            "VARCHAR", ColumnType.String,
-            "BIGINT", ColumnType.Integer,
-            "SMALLINT", ColumnType.Integer,
-            "INT", ColumnType.Integer,
-            "BIT", ColumnType.Boolean,
-            "TIMESTAMP", ColumnType.Instant,
-            "DOUBLE", ColumnType.Double,
-            "DATETIME", ColumnType.Instant,
-            "DATE", ColumnType.Instant,
-            "MEDIUMINT", ColumnType.Integer
-    );
-    private final String name;
-    private final ColumnType type;
-    private Integer maxlength;
 
-    public Column(final String name, final String type, final int maxlength) {
-        this.name = CaseUtils.toCamelCase(name, false, '_');
-        this.type = TYPE_MAP.get(type);
-        if (this.type == ColumnType.String) {
-            this.maxlength = maxlength;
-        }
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public ColumnType getType() {
-        return type;
-    }
-
-    public Integer getMaxlength() {
-        return maxlength;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("Column{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", type=").append(type);
-        if (maxlength != null) sb.append(", maxlength=").append(maxlength);
-        sb.append('}');
-        return sb.toString();
-    }
-}
-
-class ForeignKey {
-    private final String tableName;
-    private final String columnName;
-
-    public ForeignKey(String tableName, String columnName) {
-        this.tableName = tableName;
-        this.columnName = columnName;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public String getColumnName() {
-        return columnName;
-    }
-
-    @Override
-    public String toString() {
-        String sb = "ForeignKey{" + "tableName='" + tableName + '\'' +
-                ", columnName='" + columnName + '\'' +
-                '}';
-        return sb;
-    }
-}
 
 public class Table {
     private static final Logger LOG = LoggerFactory.getLogger(Table.class);
