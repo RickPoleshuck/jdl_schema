@@ -83,7 +83,9 @@ public class JdlSchema {
             Collections.sort(t.getColumns(), (c1, c2) -> c1.getName().compareTo(c2.getName()));
             for (Column c : t.getColumns()) {
                 if (c.isRelation()) continue;
-                writer.write("\t" + c.getName() + " " + Column.TYPE_MAP.get(c.getType()));
+                writer.write("\t"
+                        + CaseUtils.toCamelCase(c.getName(), false, '_')
+                        + " " + Column.TYPE_MAP.get(c.getType()));
                 if (c.getMaxlength() != null) {
                     writer.write(" maxlength(" + c.getMaxlength() + ")");
                 }
