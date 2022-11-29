@@ -28,6 +28,7 @@ public class JdlSchema {
         List<Table> tables = getTables(connection);
         List<Relationship> relationships = getRelationShips(tables);
         printTables(tables);
+        printPagination(tables);
         writer.flush();
     }
 
@@ -92,6 +93,18 @@ public class JdlSchema {
                 writer.newLine();
             }
             writer.write("}\n\n");
+        }
+    }
+
+    private void printRelationships(final List<Table> tables) throws IOException {
+
+    }
+
+    private void printPagination(final List<Table> tables) throws IOException {
+        for(Table t : tables) {
+            writer.write("paginate "
+            + CaseUtils.toCamelCase(t.getTableName(), true, '_')
+                    + " with pagination\n");
         }
     }
 }
