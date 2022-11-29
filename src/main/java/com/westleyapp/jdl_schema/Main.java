@@ -5,6 +5,7 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,7 @@ public class Main {
                 .build());
         options.addOption(Option.builder("o").longOpt("output")
                 .argName("output")
+                .hasArg()
                 .required(false)
                 .build());
         try {
@@ -50,11 +52,12 @@ public class Main {
             String output = commandLine.hasOption("o")
                     ? commandLine.getOptionValue("o")
                     : getOutputNameFromUrl(databaseUrl);
+            FileOutputStream os = new FileOutputStream(output);
             JdlSchema jdlSchema = new JdlSchema(
                     databaseUrl,
                     username,
                     password,
-                    output);
+                    os);
             LOG.debug("Parsing schema: {}", databaseUrl);
             jdlSchema.run();
         } catch (ParseException e) {
