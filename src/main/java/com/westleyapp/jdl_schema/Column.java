@@ -17,7 +17,17 @@ public class Column {
     );
     private final String name;
     private final String type;
+
+    public boolean isRelation() {
+        return isRelation;
+    }
+
+    public void setRelation(boolean relation) {
+        isRelation = relation;
+    }
+
     private Integer maxlength;
+    private boolean isRelation;
 
     public Column(final String name, final String type, final int maxlength) {
         this.name = name;
