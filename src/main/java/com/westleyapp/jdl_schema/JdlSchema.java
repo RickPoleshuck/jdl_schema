@@ -28,6 +28,7 @@ public class JdlSchema {
         List<Table> tables = getTables(connection);
         List<Relationship> relationships = getRelationShips(tables);
         printTables(tables);
+        printRelationships(relationships);
         printPagination(tables);
         writer.flush();
     }
@@ -68,7 +69,9 @@ public class JdlSchema {
                     foreignColumn.get().setRelation(true);
                 } else {
                     LOG.warn("foreign column not found: {}", fk.getLocalColumnName());
+                    continue;
                 }
+                result.add(new Relationship(t.getTableName(), fk.getLocalColumnName(), fk.getForeignTableName(), fk.getLocalColumnName()));
             }
         }
 
@@ -96,8 +99,15 @@ public class JdlSchema {
         }
     }
 
-    private void printRelationships(final List<Table> tables) throws IOException {
-
+    private void printRelationships(final List<Relationship> relationships) throws IOException {
+        for(Relationship r : relationships) {
+            writer.write("relationship " + r.getRelationshipType() + " {\n");
+            writer.write("\t" + CaseUtils.toCamelCase(r.getTableName(), true, '_')
+                    + " to "
+                    + CaseUtils.toCamelCase(r.getForeignTableName(), true, '_')
+                    + "\n");
+            writer.write("}\n\n");
+        }
     }
 
     private void printPagination(final List<Table> tables) throws IOException {
