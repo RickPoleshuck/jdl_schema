@@ -1,22 +1,26 @@
 package com.westleyapp.jdl_schema;
 
-enum RelationshipType { OneToOne, OneToMany, ManyToOne, ManyToMany }
+
 public class Relationship {
     private final String tableName;
     private final String columnName;
     private final String foreignTableName;
     private final String foreignColumnName;
-    private final RelationshipType relationshipType = RelationshipType.OneToOne;
-
-    public RelationshipType getRelationshipType() {
-        return relationshipType;
-    }
+    private RelationshipType relationshipType = RelationshipType.OneToOne;
 
     public Relationship(String tableName, String columnName, String foreignTableName, String foreignColumnName) {
         this.tableName = tableName;
         this.columnName = columnName;
         this.foreignTableName = foreignTableName;
         this.foreignColumnName = foreignColumnName;
+    }
+
+    public RelationshipType getRelationshipType() {
+        return relationshipType;
+    }
+
+    public void setRelationshipType(RelationshipType relationshipType) {
+        this.relationshipType = relationshipType;
     }
 
     public String getTableName() {
