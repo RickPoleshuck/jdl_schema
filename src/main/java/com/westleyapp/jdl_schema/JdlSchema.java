@@ -15,7 +15,7 @@ public class JdlSchema {
     private final BufferedWriter writer;
     private static final List<String> EXCLUDED_TABLES =
             List.of("DATABASECHANGELOG", "DATABASECHANGELOGLOCK", "jhi_authority",
-                    "jhi_user", "jhi_user_authority");
+                    "jhi_user", "jhi_user_authority", "rel_application_user__studio");
 
     public JdlSchema(final String databaseUrl, final String username, final String password, final OutputStream output)
             throws FileNotFoundException, SQLException {
@@ -28,6 +28,8 @@ public class JdlSchema {
         List<Table> tables = getTables(connection);
         List<Relationship> relationships = getRelationShips(tables);
         printTables(tables);
+        printRelationships(relationships);
+        printPagination(tables);
         writer.flush();
     }
 
@@ -49,16 +51,19 @@ public class JdlSchema {
         return tables;
     }
 
-    private List<Relationship> getRelationShips(final List<Table> tables) {
+    private List<Relationship> getRelationShips(final List<Table> tables) throws SQLException {
         List<Relationship> result = new ArrayList<>();
         Map<String, Table> tableMap = new HashMap<>();
-        for(Table t : tables) {
+        for (Table t : tables) {
             tableMap.put(t.getTableName(), t);
         }
 
-        for(Table t : tables) {
-            for(ForeignKey fk : t.getForeignKeys()) {
+        for (Table t : tables) {
+            for (ForeignKey fk : t.getForeignKeys()) {
                 Table foreignTable = tableMap.get(fk.getForeignTableName());
+                if (foreignTable == null) {
+                    continue;
+                }
                 Optional<Column> foreignColumn = foreignTable.getColumns()
                         .stream()
                         .filter(c -> c.getName().equals(fk.getForeignColumnName()))
@@ -67,12 +72,38 @@ public class JdlSchema {
                     foreignColumn.get().setRelation(true);
                 } else {
                     LOG.warn("foreign column not found: {}", fk.getLocalColumnName());
+                    continue;
                 }
+                Relationship relationship = new Relationship(t.getTableName(), fk.getLocalColumnName(), fk.getForeignTableName(), fk.getLocalColumnName());
+                setRelationshipType(relationship);
+                result.add(relationship);
             }
         }
 
         return result;
     }
+
+    private void setRelationshipType(final Relationship relationship) throws SQLException {
+        String sql = String.format("select %s from %s", relationship.getForeignColumnName(), relationship.getForeignTableName());
+        ResultSet rs = connection.createStatement().executeQuery(sql);
+        RelationshipType relationshipType = RelationshipType.OneToOne;
+        while (rs.next()) {
+            Integer value = rs.getInt(1);
+            String sql2 = String.format("select count(*) from %s where %s = ?", relationship.getTableName(), relationship.getColumnName());
+            PreparedStatement ps = connection.prepareStatement(sql2);
+            ps.setInt(1, value);
+            LOG.info("{}", ps);
+            ResultSet rs2 = ps.executeQuery();
+            while (rs2.next()) {
+                if (rs2.getInt(1) > 1) {
+                    relationshipType = RelationshipType.OneToMany;
+                    break;
+                }
+            }
+            relationship.setRelationshipType(relationshipType);
+        }
+    }
+
     private void printTables(final List<Table> tables) throws IOException {
         Collections.sort(tables, (t1, t2) -> t1.getTableName().compareTo(t2.getTableName()));
         for (Table t : tables) {
@@ -83,13 +114,34 @@ public class JdlSchema {
             Collections.sort(t.getColumns(), (c1, c2) -> c1.getName().compareTo(c2.getName()));
             for (Column c : t.getColumns()) {
                 if (c.isRelation()) continue;
-                writer.write("\t" + c.getName() + " " + Column.TYPE_MAP.get(c.getType()));
+                writer.write("\t"
+                        + CaseUtils.toCamelCase(c.getName(), false, '_')
+                        + " " + Column.TYPE_MAP.get(c.getType()));
                 if (c.getMaxlength() != null) {
                     writer.write(" maxlength(" + c.getMaxlength() + ")");
                 }
                 writer.newLine();
             }
             writer.write("}\n\n");
+        }
+    }
+
+    private void printRelationships(final List<Relationship> relationships) throws IOException {
+        for (Relationship r : relationships) {
+            writer.write("relationship " + r.getRelationshipType() + " {\n");
+            writer.write("\t" + CaseUtils.toCamelCase(r.getTableName(), true, '_')
+                    + " to "
+                    + CaseUtils.toCamelCase(r.getForeignTableName(), true, '_')
+                    + "\n");
+            writer.write("}\n\n");
+        }
+    }
+
+    private void printPagination(final List<Table> tables) throws IOException {
+        for (Table t : tables) {
+            writer.write("paginate "
+                    + CaseUtils.toCamelCase(t.getTableName(), true, '_')
+                    + " with pagination\n");
         }
     }
 }
