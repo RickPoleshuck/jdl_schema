@@ -30,6 +30,7 @@ public class JdlSchema {
         printTables(tables);
         printRelationships(relationships);
         printPagination(tables);
+        printFilter(tables);
         writer.flush();
     }
 
@@ -114,6 +115,9 @@ public class JdlSchema {
             Collections.sort(t.getColumns(), (c1, c2) -> c1.getName().compareTo(c2.getName()));
             for (Column c : t.getColumns()) {
                 if (c.isRelation()) continue;
+                if (Column.TYPE_MAP.get(c.getType())== null) {
+                    LOG.error("Type not found for {}", c.getType());
+                }
                 writer.write("\t"
                         + CaseUtils.toCamelCase(c.getName(), false, '_')
                         + " " + Column.TYPE_MAP.get(c.getType()));
@@ -143,5 +147,15 @@ public class JdlSchema {
                     + CaseUtils.toCamelCase(t.getTableName(), true, '_')
                     + " with pagination\n");
         }
+        writer.write("}\n\n");
+    }
+
+    private void printFilter(final List<Table> tables) throws IOException {
+        for (Table t : tables) {
+            writer.write("filter " +
+                    CaseUtils.toCamelCase(t.getTableName(), true, '_') +
+                    "\n");
+        }
+        writer.write("}\n\n");
     }
 }

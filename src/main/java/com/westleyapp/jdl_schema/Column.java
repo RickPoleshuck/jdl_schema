@@ -3,29 +3,22 @@ package com.westleyapp.jdl_schema;
 import java.util.Map;
 
 public class Column {
-    public final static Map<String, ColumnType> TYPE_MAP = Map.of(
-            "VARCHAR", ColumnType.String,
-            "BIGINT", ColumnType.Integer,
-            "SMALLINT", ColumnType.Integer,
-            "INT", ColumnType.Integer,
-            "BIT", ColumnType.Boolean,
-            "TIMESTAMP", ColumnType.Instant,
-            "DOUBLE", ColumnType.Double,
-            "DATETIME", ColumnType.Instant,
-            "DATE", ColumnType.Instant,
-            "MEDIUMINT", ColumnType.Integer
+    public final static Map<String, ColumnType> TYPE_MAP = Map.ofEntries(
+            Map.entry("VARCHAR", ColumnType.String),
+            Map.entry("BIGINT", ColumnType.Integer),
+            Map.entry("SMALLINT", ColumnType.Integer),
+            Map.entry("INT", ColumnType.Integer),
+            Map.entry("BIT", ColumnType.Boolean),
+            Map.entry("TIMESTAMP", ColumnType.Instant),
+            Map.entry("DOUBLE", ColumnType.Double),
+            Map.entry("DATETIME", ColumnType.Instant),
+            Map.entry("DATE", ColumnType.Instant),
+            Map.entry("MEDIUMINT", ColumnType.Integer),
+            Map.entry("BLOB", ColumnType.Blob),
+            Map.entry("LONGBLOB", ColumnType.Blob)
     );
     private final String name;
     private final String type;
-
-    public boolean isRelation() {
-        return isRelation;
-    }
-
-    public void setRelation(boolean relation) {
-        isRelation = relation;
-    }
-
     private Integer maxlength;
     private boolean isRelation;
 
@@ -35,6 +28,14 @@ public class Column {
         if (TYPE_MAP.get(this.type) == ColumnType.String) {
             this.maxlength = maxlength;
         }
+    }
+
+    public boolean isRelation() {
+        return isRelation;
+    }
+
+    public void setRelation(boolean relation) {
+        isRelation = relation;
     }
 
     public String getName() {
