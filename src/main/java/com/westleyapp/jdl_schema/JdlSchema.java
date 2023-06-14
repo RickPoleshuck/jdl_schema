@@ -147,7 +147,7 @@ public class JdlSchema {
                     + CaseUtils.toCamelCase(t.getTableName(), true, '_')
                     + " with pagination\n");
         }
-        writer.write("}\n\n");
+        writer.write("\n\n");
     }
 
     private void printFilter(final List<Table> tables) throws IOException {
@@ -156,6 +156,6 @@ public class JdlSchema {
                     CaseUtils.toCamelCase(t.getTableName(), true, '_') +
                     "\n");
         }
-        writer.write("}\n\n");
+        writer.write("\n\n");
     }
 }
